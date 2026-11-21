@@ -1,0 +1,9 @@
+{
+  "firebaseConfig": {
+    "apiKey": "AIzaSyDmWgsvzf3x4_aeXy13KElUzppveSpXqJA",
+    "authDomain": "fillcut.firebaseapp.com",
+    "projectId": "fillcut",
+    "appId": "1:357416794671:web:072684cf7ef181d9a9e4da"
+  },
+  "appleEnabled": false
+}

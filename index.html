@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#f5f7f4">
+  <title>fillcut — Optimiza tus cortes de vidrio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=intro-cuadros">
+  <link rel="stylesheet" href="account.css">
+</head>
+<body>
+  <div class="site-intro" id="siteIntro" aria-hidden="true" hidden>
+    <canvas width="540" height="240"></canvas>
+  </div>
+  <script>
+    (() => {
+      const motion = matchMedia('(prefers-reduced-motion: reduce)');
+      if (motion.matches) return;
+
+      const intro = document.getElementById('siteIntro');
+      const canvas = intro.querySelector('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      const frames = new Image();
+      const listeners = new AbortController();
+      const options = { signal: listeners.signal };
+      let nextFrame;
+      const finish = () => {
+        listeners.abort();
+        clearTimeout(deadline);
+        cancelAnimationFrame(nextFrame);
+        intro.classList.add('is-leaving');
+        setTimeout(() => { intro.hidden = true; }, motion.matches ? 0 : 220);
+      };
+      const deadline = setTimeout(finish, 2000);
+      frames.addEventListener('load', () => {
+        clearTimeout(deadline);
+        const columns = 6;
+        const frameCount = 36;
+        const frameDuration = 30;
+        let previousTime;
+        let elapsed = 0;
+        let shown = -1;
+
+        const play = time => {
+          // Keep the sequence visible after a slow paint or a backgrounded tab.
+          elapsed += Math.min(time - (previousTime ?? time), frameDuration);
+          previousTime = time;
+          const frame = Math.min(frameCount - 1, Math.floor(elapsed / frameDuration));
+          if (frame !== shown) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(frames, (frame % columns) * canvas.width,
+              Math.floor(frame / columns) * canvas.height, canvas.width, canvas.height,
+              0, 0, canvas.width, canvas.height);
+            shown = frame;
+          }
+          if (elapsed >= frameCount * frameDuration) finish();
+          else nextFrame = requestAnimationFrame(play);
+        };
+        nextFrame = requestAnimationFrame(play);
+      }, { ...options, once: true });
+      frames.addEventListener('error', finish, options);
+      motion.addEventListener('change', finish, options);
+      intro.hidden = false;
+      frames.src = 'fillcut-intro-frames.webp';
+    })();
+  </script>
+  <header class="topbar">
+    <a class="brand" href="#inicio" aria-label="fillcut, inicio"><span class="brand-mark" aria-hidden="true"><img src="fillcut-emblem.png" width="24" height="24" alt=""></span><span class="brand-word">fillcut</span></a>
+    <div class="top-note"><span class="live-dot"></span> Tu taller de corte, más inteligente</div>
+    <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a modo oscuro" aria-pressed="false"><svg class="theme-icon moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z"/></svg><svg class="theme-icon sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l-1.42 1.42m11.3-11.3 1.42-1.42"/></svg><span id="themeLabel">Modo oscuro</span></button><button class="help-button" id="helpButton" type="button"><span>?</span> ¿Cómo funciona?</button><button class="account-button" id="accountButton" type="button" aria-label="Iniciar sesión" title="Iniciar sesión" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c.6-3.5 3.2-5.3 7.2-5.3s6.6 1.8 7.2 5.3"/></svg><span>Iniciar sesión</span></button></div>
+  </header>
+
+  <main id="inicio">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow hero-kicker"><span class="eyebrow-line"></span> DISEÑADO PARA CORTAR MEJOR</div>
+        <h1>Optimizador<br> de vidrio</h1>
+        <p>Selecciona las hojas que tienes. Después dinos qué piezas necesitas y te recomendamos cómo cortarlas.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-sheet art-sheet-back"></div>
+        <div class="art-sheet art-sheet-front"><span class="art-cut cut-one"></span><span class="art-cut cut-two"></span><span class="art-cut cut-three"></span></div>
+      </div>
+    </section>
+
+    <section class="project-toolbar" aria-label="Administrar proyectos"><div class="project-current"><span>PROYECTO ACTUAL</span><input id="projectName" type="text" maxlength="64" value="" aria-label="Nombre del proyecto"></div><div class="project-actions"><button id="newProject" type="button">＋ Nuevo proyecto</button><button id="saveProject" type="button">Guardar proyecto</button><button id="showProjects" type="button">Proyectos anteriores</button></div></section>
+    <section class="workspace">
+      <aside class="control-panel">
+        <div class="section-heading"><div><span class="step">01</span><h2>¿Qué hojas tienes?</h2></div><span class="unit-chip">MEDIDAS EN CM</span></div>
+        <p class="section-hint">Selecciona todas las medidas disponibles en tu inventario.</p>
+        <div class="sheet-presets" id="nationalPresets"></div>
+        <div class="inventory-footer"><p class="inventory-count" id="inventoryCount">Aún no has seleccionado hojas</p><button class="custom-toggle" id="customToggle" type="button" aria-label="Agregar una medida personalizada" aria-expanded="false" aria-controls="customTray" title="Agregar una medida personalizada"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        <div class="custom-tray" id="customTray" hidden><div class="custom-tray-heading"><div><strong>Agregar tamaño de hoja</strong><span>Escribe las medidas en centímetros.</span></div><button class="custom-tray-close" id="closeCustom" type="button" aria-label="Cerrar">×</button></div><div class="custom-fields"><label><span>Ancho</span><input id="customW" type="number" min="1" step="0.1" placeholder="Ej. 244.5"></label><b>×</b><label><span>Alto</span><input id="customH" type="number" min="1" step="0.1" placeholder="Ej. 183.2"></label><button id="addCustom" type="button" aria-label="Agregar tamaño">↗</button></div></div>
+
+        <div class="settings-divider"></div>
+        <div class="section-heading"><div><span class="step">02</span><h2>¿Qué necesitas cortar?</h2></div><span class="unit-chip">MEDIDAS EN CM</span></div>
+        <p class="section-hint">Anota ancho, alto y cantidad. Usa el color para identificar cada medida en el plano.</p>
+        <div class="piece-labels"><span>PIEZA</span><span>ANCHO</span><span>ALTO</span><span>CANT.</span><span>MATERIAL</span><span></span></div>
+        <div id="pieceRows" class="piece-rows"></div>
+        <button class="add-piece" id="addPiece" type="button"><span>＋</span> Agregar otra medida</button>
+        <div class="excel-import"><input id="excelFile" type="file" accept=".xlsx,.xls,.csv" hidden><button id="excelImportButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L8 7m4-4 4 4M4 14v6h16v-6"/></svg> Cargar medidas desde Excel</button><small>Columnas: nombre, ancho, alto, cantidad y material (opcional). Reemplaza las piezas actuales.</small></div>
+        <fieldset class="strategy-picker"><legend>¿Qué quieres priorizar?</legend><label class="strategy-option"><input type="radio" name="cutStrategy" value="efficiency" checked><span><b>Aprovechar al máximo</b><small>Menos hojas y menos desperdicio.</small></span></label><label class="strategy-option"><input type="radio" name="cutStrategy" value="remnants"><span><b>Conservar sobrantes grandes</b><small>Prioriza dejar más vidrio útil para otros cortes.</small></span></label></fieldset>
+        <details class="optional-details"><summary>Grosor (opcional)</summary><p class="thickness-hint">Elige el grosor para cada medida. Puedes cambiarlo cuando lo necesites.</p><div id="pieceThicknessRows" class="piece-thickness-rows"></div></details>
+        <button class="calculate-button" id="calculate" type="button"><span>Calcular mis hojas y cortes</span><b>↗</b></button>
+        <p class="fine-print"><span>✦</span> Te mostraremos cuántas hojas usar y cómo distribuir las piezas.</p>
+      </aside>
+
+      <section class="results-panel" aria-live="polite">
+        <div class="results-heading"><div><span class="step">03</span><h2>Tu plan de corte</h2></div><button class="reset-button" id="resetButton" type="button">Vaciar</button></div>
+        <div id="resultsContent"></div>
+      </section>
+    </section>
+    <footer><a class="brand footer-brand" href="#inicio" aria-label="fillcut, inicio"><span class="brand-mark" aria-hidden="true"><img src="fillcut-emblem.png" width="19" height="19" alt=""></span><span class="brand-word">fillcut</span></a><span>Menos desperdicio. Más posibilidades.</span><span>HECHO PARA EL TALLER <b>✳</b></span></footer>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <dialog id="pdfEditorDialog" class="pdf-editor-dialog"><button class="dialog-close" id="closePdfEditor" aria-label="Cerrar">×</button><span class="eyebrow">PERSONALIZA TU DOCUMENTO</span><h2>Editar plano de corte</h2><p class="dialog-note">Agrega tu logo y ajusta los datos del plano antes de descargarlo o compartir el PDF.</p><div class="pdf-editor-grid"><div class="pdf-logo-wrap"><label class="pdf-logo-upload" for="pdfLogoFile"><img id="pdfLogoPreview" alt="Vista previa de tu logo" hidden><span id="pdfLogoPlaceholder">＋</span><b id="pdfLogoLabel">Agregar logo</b><small>PNG o JPG · máximo 2 MB</small></label><input id="pdfLogoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden><button class="pdf-remove-logo" id="removePdfLogo" type="button" aria-label="Quitar logo" title="Quitar logo" hidden>×</button></div><label class="pdf-field">Nombre de tu negocio<input id="pdfBusinessName" type="text" maxlength="50" placeholder="fillcut"></label><label class="pdf-field">Título del documento<input id="pdfDocumentTitle" type="text" maxlength="60" placeholder="Plan de corte"></label><label class="pdf-field">Teléfono o correo (opcional)<input id="pdfContact" type="text" maxlength="70" placeholder="Para incluir en el PDF"></label><label class="pdf-field">Notas adicionales (opcional)<textarea id="pdfNote" rows="3" maxlength="180" placeholder="Escribe una nota breve"></textarea></label></div><div class="pdf-editor-actions"><button class="pdf-secondary" id="pdfShareAction" type="button">Compartir plano PDF</button><button class="pdf-primary" id="pdfDownloadAction" type="button">Descargar plano PDF</button></div></dialog>
+  <dialog id="materialsShareDialog" class="quote-request-dialog" aria-labelledby="quoteRequestTitle">
+    <form id="quoteRequestForm">
+      <button class="dialog-close" id="closeMaterialsShare" type="button" aria-label="Cerrar">×</button>
+      <h2 id="quoteRequestTitle">Solicitar cotización</h2>
+      <div class="quote-scroll">
+        <p id="quotePlanError" role="status" hidden></p>
+        <div id="quoteRequestFields">
+          <div class="quote-fields">
+            <label>Nombre del solicitante (opcional)<input id="quoteRequester" type="text" maxlength="100" autocomplete="name"></label>
+            <label>Nombre del proveedor (opcional)<input id="quoteSupplier" type="text" maxlength="100"></label>
+          </div>
+          <h3>Resumen de materiales</h3>
+          <p id="quoteCalculatedTotal"></p>
+          <div id="quoteEditableRows"></div>
+          <label class="quote-notes">Observaciones<textarea id="quoteNotes" rows="3" maxlength="2000" placeholder="Escribe tus observaciones"></textarea></label>
+          <section class="quote-preview">
+            <button id="quotePreviewToggle" class="quote-preview-toggle" type="button" aria-expanded="true" aria-controls="quotePreviewContent">
+              <span class="quote-preview-chevron" aria-hidden="true"></span>
+              Vista previa del documento
+            </button>
+            <div id="quotePreviewContent" class="quote-preview-content">
+              <div class="quote-preview-inner">
+                <article class="quote-paper">
+                  <header><span class="quote-logo-mark"><img src="fillcut-emblem.png" width="24" height="24" alt=""></span><strong>FILLCUT</strong></header>
+                  <h3>Solicitud de cotización de materiales</h3>
+                  <dl id="quotePreviewDetails"></dl>
+                  <table><thead><tr><th>Material</th><th>Grosor</th><th>Medidas de lámina</th><th>Cantidad</th></tr></thead><tbody id="quotePreviewRows"></tbody></table>
+                  <h4>Observaciones</h4>
+                  <p id="quotePreviewNotes"></p>
+                  <footer><span>Generado con FILLCUT</span><a href="https://fillcut.com">Fillcut.com</a></footer>
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="quote-controls">
+        <button id="quoteGenerate" type="submit">
+          <span class="quote-spinner" aria-hidden="true"></span>
+          <span id="quoteGenerateLabel">GENERAR PDF</span>
+        </button>
+        <div id="quoteDownloadActions" class="quote-download-actions" hidden>
+          <button type="button" id="quoteDownload">DESCARGAR PDF</button>
+          <button type="button" id="quoteWhatsApp" aria-label="Compartir por WhatsApp"><span class="quote-share-prefix">COMPARTIR POR </span>WHATSAPP</button>
+          <button type="button" id="quoteEmail" aria-label="Compartir por correo"><span class="quote-share-prefix">COMPARTIR POR </span>CORREO</button>
+          <button type="button" id="quoteBack" aria-label="Volver a Generar PDF" title="Volver a Generar PDF">←</button>
+        </div>
+        <p id="quoteStatus" role="status" hidden></p>
+        <a id="quoteFallback" target="_blank" rel="noopener" hidden></a>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="helpDialog"><button class="dialog-close" id="closeHelp" aria-label="Cerrar">×</button><span class="eyebrow">DE LAS MEDIDAS AL CORTE</span><h2>Del inventario a tu plan de corte.</h2><ol><li><b>Marca tus hojas disponibles</b><span>Selecciona los tamaños que tienes o agrega una medida especial.</span></li><li><b>Ingresa las piezas necesarias</b><span>Para cada tamaño, indica ancho, alto y cantidad. Te diremos cuántas hojas usar.</span></li><li><b>Consulta el orden de corte</b><span>En cada hoja, pulsa “Ver orden de corte” para ver los pasos numerados.</span></li></ol><p class="dialog-note">La guía supone vidrio recocido que admite corte manual. El vidrio templado y algunos laminados requieren otro proceso. Confirma el material y las medidas con tu vidriero.</p></dialog>
+  <dialog id="accountDialog" aria-labelledby="accountTitle">
+    <button class="dialog-close" data-action="close" type="button" aria-label="Cerrar">×</button>
+    <div class="account-body">
+      <img class="account-logo" src="fillcut-emblem.png" width="85" height="85" alt="" hidden>
+      <h2 id="accountTitle" tabindex="-1"></h2>
+      <div id="accountContent"></div>
+      <p id="accountError" role="alert" hidden></p>
+      <p id="accountStatus" role="status" hidden></p>
+    </div>
+  </dialog>
+  <dialog id="profileDialog"><button class="dialog-close" id="closeProfile" aria-label="Cerrar">×</button><span class="eyebrow">PERFIL LOCAL</span><h2>Mi perfil</h2><p class="dialog-note">Tu nombre se guarda en este navegador.</p><label class="field-label" for="profileName">Tu nombre</label><input class="profile-input" id="profileName" type="text" maxlength="48" placeholder="Ej. Ana"><div class="profile-actions"><button class="profile-save" id="saveProfile" type="button">Guardar perfil</button></div></dialog>
+  <dialog id="projectsDialog"><button class="dialog-close" id="closeProjects" aria-label="Cerrar">×</button><span class="eyebrow">PROYECTOS GUARDADOS</span><h2>Proyectos anteriores</h2><p class="dialog-note">Los proyectos se guardan solo en este navegador.</p><div id="projectList" class="project-list"></div></dialog>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="vendor/jspdf.min.js"></script>
+  <script src="app.js"></script>
+  <script type="module" src="account.mjs"></script>
+</body>
+</html>
